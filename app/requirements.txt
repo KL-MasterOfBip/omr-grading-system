@@ -1,0 +1,12 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+pydantic[email]
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+opencv-python
+numpy
+reportlab

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Đăng ký{% endblock %}
+{% block content %}
+<div class="auth-box">
+    <h1>Đăng ký tài khoản</h1>
+    <form action="/auth/register" method="post">
+        <label>Tên đăng nhập</label>
+        <input type="text" name="username" required>
+        <label>Email</label>
+        <input type="email" name="email" required>
+        <label>Họ tên</label>
+        <input type="text" name="full_name">
+        <label>Mật khẩu</label>
+        <input type="password" name="password" required>
+        <button type="submit" class="btn btn-primary">Đăng ký</button>
+    </form>
+    <p>Đã có tài khoản? <a href="/auth/login">Đăng nhập</a></p>
+</div>
+{% endblock %}

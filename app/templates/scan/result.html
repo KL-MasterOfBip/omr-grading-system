@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Kết quả chấm bài{% endblock %}
+{% block content %}
+<h1>Kết quả chấm bài</h1>
+<p><strong>Học sinh:</strong> {{ result.student_name or 'N/A' }}</p>
+<p><strong>SBD:</strong> {{ result.student_id or 'N/A' }}</p>
+<p><strong>Điểm:</strong> {{ result.total_score }} / {{ result.max_score }}</p>
+
+<h2>Chi tiết từng câu</h2>
+<table class="table">
+    <thead>
+        <tr><th>Câu</th><th>Đã chọn</th><th>Đáp án đúng</th><th>Kết quả</th></tr>
+    </thead>
+    <tbody>
+        {% for detail in answer_details %}
+        <tr class="{{ 'correct' if detail.is_correct else 'wrong' }}">
+            <td>{{ loop.index }}</td>
+            <td>{{ detail.selected_answer or '-' }}</td>
+            <td>{{ detail.question.correct_answer }}</td>
+            <td>{{ '✓' if detail.is_correct else '✗' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

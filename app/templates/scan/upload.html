@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Chấm bài OMR{% endblock %}
+{% block content %}
+<h1>Chấm bài OMR — {{ exam.title }}</h1>
+<form action="/scan/upload/{{ exam.id }}" method="post" enctype="multipart/form-data">
+    <label>Mã học sinh (SBD)</label>
+    <input type="text" name="student_id">
+    <label>Họ tên học sinh</label>
+    <input type="text" name="student_name">
+    <label>Ảnh bài thi</label>
+    <input type="file" name="file" accept="image/*" required>
+    <button type="submit" class="btn btn-primary">Chấm bài</button>
+</form>
+{% endblock %}

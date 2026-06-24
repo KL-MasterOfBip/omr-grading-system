@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Danh sách đề thi{% endblock %}
+{% block content %}
+<h1>Danh sách đề thi</h1>
+<a href="/exams/create" class="btn btn-primary">+ Tạo đề thi</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th><th>Tiêu đề</th><th>Môn học</th><th>Số câu</th><th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for exam in exams %}
+        <tr>
+            <td>{{ exam.id }}</td>
+            <td>{{ exam.title }}</td>
+            <td>{{ exam.subject or '-' }}</td>
+            <td>{{ exam.num_questions }}</td>
+            <td>
+                <a href="/exams/{{ exam.id }}">Xem</a> |
+                <a href="/scan/{{ exam.id }}">Chấm bài</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">Chưa có đề thi nào.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

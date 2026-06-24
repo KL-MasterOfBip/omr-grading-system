@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Chi tiết đề thi{% endblock %}
+{% block content %}
+<h1>{{ exam.title }}</h1>
+<p><strong>Môn:</strong> {{ exam.subject or '-' }}</p>
+<p><strong>Số câu:</strong> {{ exam.num_questions }}</p>
+<p><strong>Số lựa chọn:</strong> {{ exam.num_choices }}</p>
+<p><strong>Mô tả:</strong> {{ exam.description or '-' }}</p>
+
+<h2>Đáp án</h2>
+<table class="table">
+    <thead><tr><th>Câu</th><th>Đáp án đúng</th><th>Điểm</th></tr></thead>
+    <tbody>
+        {% for q in questions %}
+        <tr>
+            <td>{{ q.order }}</td>
+            <td>{{ q.correct_answer }}</td>
+            <td>{{ q.score }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="/scan/{{ exam.id }}" class="btn btn-primary">Chấm bài cho đề này</a>
+{% endblock %}
