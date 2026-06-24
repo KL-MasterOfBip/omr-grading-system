@@ -1,30 +1,30 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from app.core.config import settings
+from app.core.database import engine, Base
 
-from app.core.database import Base, engine
-import app.models  # noqa: F401 — registers all models with SQLAlchemy before create_all
-from app.routers import auth, exam, question, scan
+# Import tất cả models để SQLAlchemy nhận diện trước khi create_all
+from app.models import user, exam, exam_code, question, scan_result, answer_detail  # noqa: F401
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Import routers
+from app.routers import auth
 
 app = FastAPI(
-    title="OMR System",
-    description="Optical Mark Recognition System for exam grading",
-    version="1.0.0",
+    title=settings.APP_NAME,
+    debug=settings.DEBUG,
 )
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+@app.on_event("startup")
+def on_startup():
+    """Tạo tất cả bảng khi app khởi động (nếu chưa có)"""
+    Base.metadata.create_all(bind=engine)
+
 
 # Include routers
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(exam.router, prefix="/exams", tags=["exams"])
-app.include_router(question.router, prefix="/questions", tags=["questions"])
-app.include_router(scan.router, prefix="/scan", tags=["scan"])
 
 
 @app.get("/")
-async def root():
-    return {"message": "OMR System API is running"}
+def root():
+    return {"message": f"Welcome to {settings.APP_NAME}"}

@@ -18,7 +18,7 @@ class Exam(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    creator = relationship("User", backref="exams")
+    creator = relationship("User", back_populates="exams")
     exam_codes = relationship("ExamCode", back_populates="exam", cascade="all, delete-orphan")
     questions = relationship("Question", back_populates="exam", cascade="all, delete-orphan")
     scan_results = relationship("ScanResult", back_populates="exam", cascade="all, delete-orphan")

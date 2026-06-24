@@ -1,0 +1,47 @@
+app/
+│
+├── main.py
+│
+├── core/
+│   ├── config.py
+│   ├── security.py
+│   └── database.py
+│
+├── models/
+│   ├── user.py
+│   ├── exam.py
+│   ├── question.py
+│   ├── scan_result.py
+│   └── answer_detail.py
+│
+├── schemas/
+│   ├── user.py
+│   ├── exam.py
+│   ├── question.py
+│
+├── routers/
+│   ├── auth.py
+│   ├── exam.py
+│   ├── question.py
+│   └── scan.py
+│
+├── services/
+│   ├── omr_service.py
+│   ├── grading_service.py
+│   └── pdf_service.py
+│
+├── repositories/
+│   ├── exam_repository.py
+│   ├── question_repository.py
+│   └── result_repository.py
+│
+├── utils/
+│   ├── image_utils.py
+│   └── score_utils.py
+│
+└── omr/
+    ├── detect.py
+    └── generate_sheet.py
+    
+    
+Hoi xem nhu nay oke khong
