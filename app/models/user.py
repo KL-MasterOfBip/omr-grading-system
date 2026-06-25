@@ -25,5 +25,7 @@ class User(Base):
     created_at    = Column(DateTime(timezone=True), server_default=func.now())
     updated_at    = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Quan hệ: 1 teacher tạo nhiều exam
+    # Quan hệ: 1 teacher tạo nhiều exam, exam_codes, questions
     exams = relationship("Exam", back_populates="creator")
+    exam_codes = relationship("ExamCode", back_populates="creator")
+    questions = relationship("Question", back_populates="creator")

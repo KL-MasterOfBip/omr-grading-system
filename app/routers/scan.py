@@ -11,9 +11,9 @@ from app.schemas.scan_result import ScanResultResponse
 router = APIRouter()
 
 
-@router.post("/upload/{exam_id}", response_model=ScanResultResponse, status_code=201)
+@router.post("/upload/{exam_code_id}", response_model=ScanResultResponse, status_code=201)
 async def scan_answer_sheet(
-    exam_id: int,
+    exam_code_id: int,
     file: UploadFile = File(...),
     student_id: str = Form(None),
     student_name: str = Form(None),
@@ -24,7 +24,7 @@ async def scan_answer_sheet(
     contents = await file.read()
     omr_service = OMRService(db)
     result = omr_service.process_image(
-        exam_id=exam_id,
+        exam_code_id=exam_code_id,
         image_bytes=contents,
         filename=file.filename,
         student_id=student_id,

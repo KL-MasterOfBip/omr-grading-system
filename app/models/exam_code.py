@@ -12,7 +12,11 @@ class ExamCode(Base):
     exam_id = Column(Integer, ForeignKey("exams.id"), nullable=False)
     code = Column(String, nullable=False)  # e.g. "001", "002"
     description = Column(String, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     exam = relationship("Exam", back_populates="exam_codes")
+    creator = relationship("User", back_populates="exam_codes")
+    questions = relationship("Question", back_populates="exam_code", cascade="all, delete-orphan")

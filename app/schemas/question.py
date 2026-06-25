@@ -10,7 +10,7 @@ class QuestionBase(BaseModel):
 
 
 class QuestionCreate(QuestionBase):
-    exam_id: int
+    exam_code_id: int
 
 
 class QuestionUpdate(BaseModel):
@@ -20,8 +20,10 @@ class QuestionUpdate(BaseModel):
 
 class QuestionResponse(QuestionBase):
     id: int
-    exam_id: int
+    exam_code_id: int
+    created_by: Optional[int] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

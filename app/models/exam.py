@@ -20,5 +20,4 @@ class Exam(Base):
     # Relationships
     creator = relationship("User", back_populates="exams")
     exam_codes = relationship("ExamCode", back_populates="exam", cascade="all, delete-orphan")
-    questions = relationship("Question", back_populates="exam", cascade="all, delete-orphan")
     scan_results = relationship("ScanResult", back_populates="exam", cascade="all, delete-orphan")

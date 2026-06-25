@@ -10,10 +10,10 @@ from app.schemas.question import QuestionCreate, QuestionUpdate, QuestionRespons
 router = APIRouter()
 
 
-@router.get("/exam/{exam_id}", response_model=List[QuestionResponse])
-def get_questions_by_exam(exam_id: int, db: Session = Depends(get_db)):
+@router.get("/exam-code/{exam_code_id}", response_model=List[QuestionResponse])
+def get_questions_by_exam_code(exam_code_id: int, db: Session = Depends(get_db)):
     repo = QuestionRepository(db)
-    return repo.get_by_exam(exam_id)
+    return repo.get_by_exam_code(exam_code_id)
 
 
 @router.post("/", response_model=QuestionResponse, status_code=201)
@@ -23,7 +23,9 @@ def create_question(
     current_user=Depends(get_current_active_user),
 ):
     repo = QuestionRepository(db)
-    return repo.create(**question_in.model_dump())
+    question_data = question_in.model_dump()
+    question_data["created_by"] = current_user.id
+    return repo.create(**question_data)
 
 
 @router.put("/{question_id}", response_model=QuestionResponse)

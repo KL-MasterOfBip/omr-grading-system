@@ -9,6 +9,7 @@ from app.omr.detect import detect_answers
 from app.services.grading_service import GradingService
 from app.repositories.result_repository import ResultRepository
 from app.repositories.question_repository import QuestionRepository
+from app.models.exam_code import ExamCode
 
 
 class OMRService:
@@ -20,7 +21,7 @@ class OMRService:
 
     def process_image(
         self,
-        exam_id: int,
+        exam_code_id: int,
         image_bytes: bytes,
         filename: Optional[str] = None,
         student_id: Optional[str] = None,
@@ -34,7 +35,7 @@ class OMRService:
         4. Persist result
         """
         # 1. Save image
-        upload_dir = os.path.join(settings.UPLOAD_DIR, str(exam_id))
+        upload_dir = os.path.join(settings.UPLOAD_DIR, str(exam_code_id))
         os.makedirs(upload_dir, exist_ok=True)
         unique_name = f"{uuid.uuid4().hex}_{filename or 'scan.jpg'}"
         image_path = os.path.join(upload_dir, unique_name)
@@ -45,15 +46,19 @@ class OMRService:
         detected_answers = detect_answers(image_path)  # dict: {question_order: answer}
 
         # 3. Grade
-        questions = self.question_repo.get_by_exam(exam_id)
+        questions = self.question_repo.get_by_exam_code(exam_code_id)
         total_score, max_score, answer_details = self.grading_service.grade(
             questions=questions,
             detected_answers=detected_answers,
         )
 
         # 4. Save result
+        exam_code_obj = self.db.query(ExamCode).filter(ExamCode.id == exam_code_id).first()
+        exam_id = exam_code_obj.exam_id if exam_code_obj else 0
+
         result = self.result_repo.create_result(
             exam_id=exam_id,
+            exam_code_id=exam_code_id,
             student_id=student_id,
             student_name=student_name,
             image_path=image_path,

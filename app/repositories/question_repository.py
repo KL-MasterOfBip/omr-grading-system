@@ -10,10 +10,10 @@ class QuestionRepository:
     def get_by_id(self, question_id: int) -> Optional[Question]:
         return self.db.query(Question).filter(Question.id == question_id).first()
 
-    def get_by_exam(self, exam_id: int) -> List[Question]:
+    def get_by_exam_code(self, exam_code_id: int) -> List[Question]:
         return (
             self.db.query(Question)
-            .filter(Question.exam_id == exam_id)
+            .filter(Question.exam_code_id == exam_code_id)
             .order_by(Question.order)
             .all()
         )
