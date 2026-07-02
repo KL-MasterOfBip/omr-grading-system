@@ -7,7 +7,7 @@ from app.core.database import engine, Base
 from app.models import user, exam, exam_code, question, scan_result, answer_detail  # noqa: F401
 
 # Import routers
-from app.routers import auth, exam, question, scan  # ← thêm 3 cái này
+from app.routers import auth, exam, question, scan, exam_code
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -25,7 +25,7 @@ app.include_router(auth.router,     prefix="/auth",      tags=["auth"])
 app.include_router(exam.router,     prefix="/exams",     tags=["exams"])        # ← thêm
 app.include_router(question.router, prefix="/questions", tags=["questions"])    # ← thêm
 app.include_router(scan.router,     prefix="/scan",      tags=["scan"])         # ← thêm
-
+app.include_router(exam_code.router, prefix="/exam-codes", tags=["exam-codes"])
 
 @app.get("/")
 def root():
