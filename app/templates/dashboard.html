@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Tổng quan - OMR Grading System{% endblock %}
+{% block page_title %}Tổng quan{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid" id="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <span class="material-icons-outlined">description</span>
+        </div>
+        <div>
+            <div class="stat-value" id="stat-exams">—</div>
+            <div class="stat-label">Đề thi</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <span class="material-icons-outlined">document_scanner</span>
+        </div>
+        <div>
+            <div class="stat-value" id="stat-scans">—</div>
+            <div class="stat-label">Bài đã chấm</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <span class="material-icons-outlined">trending_up</span>
+        </div>
+        <div>
+            <div class="stat-value" id="stat-avg">—</div>
+            <div class="stat-label">Điểm trung bình</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <h2>Thao tác nhanh</h2>
+    </div>
+    <div class="card-body" id="quick-actions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <!-- Loaded by JS -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(async () => {
+        const user = window.currentUser;
+        if (!user) return;
+
+        const actions = document.getElementById('quick-actions');
+        const isTeacher = user.role === 'teacher' || user.role === 'admin';
+
+        if (isTeacher) {
+            actions.innerHTML = `
+                <a href="/scan" class="btn btn-primary btn-lg">
+                    <span class="material-icons-outlined">document_scanner</span>
+                    Quét & Chấm bài
+                </a>
+                <a href="/exams" class="btn btn-secondary btn-lg">
+                    <span class="material-icons-outlined">description</span>
+                    Quản lý Đề thi
+                </a>
+                <a href="/results" class="btn btn-secondary btn-lg">
+                    <span class="material-icons-outlined">leaderboard</span>
+                    Xem Bảng điểm
+                </a>
+            `;
+
+            // Load stats
+            try {
+                const exRes = await apiFetch('/exams/');
+                if (exRes.ok) {
+                    const exams = await exRes.json();
+                    document.getElementById('stat-exams').textContent = exams.length;
+
+                    // Count total scans across all exams
+                    let totalScans = 0;
+                    let totalScore = 0;
+                    let totalMax = 0;
+
+                    for (const exam of exams) {
+                        try {
+                            const sRes = await apiFetch(`/scan/results/${exam.id}`);
+                            if (sRes.ok) {
+                                const results = await sRes.json();
+                                totalScans += results.length;
+                                results.forEach(r => {
+                                    totalScore += r.total_score;
+                                    totalMax += r.max_score;
+                                });
+                            }
+                        } catch(e) {}
+                    }
+
+                    document.getElementById('stat-scans').textContent = totalScans;
+                    if (totalMax > 0) {
+                        const avg = ((totalScore / totalMax) * 10).toFixed(1);
+                        document.getElementById('stat-avg').textContent = avg;
+                    } else {
+                        document.getElementById('stat-avg').textContent = '—';
+                    }
+                }
+            } catch(e) { console.error(e); }
+
+        } else {
+            // Student
+            document.getElementById('stats-grid').innerHTML = '';
+            actions.innerHTML = `
+                <a href="/results" class="btn btn-primary btn-lg">
+                    <span class="material-icons-outlined">grade</span>
+                    Xem điểm của tôi
+                </a>
+            `;
+        }
+    }, 150);
+});
+</script>
+{% endblock %}

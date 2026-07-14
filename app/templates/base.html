@@ -3,28 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}OMR System{% endblock %}</title>
+    <title>{% block title %}OMR Grading System{% endblock %}</title>
+    <meta name="description" content="Hệ thống chấm thi trắc nghiệm tự động OMR">
     <link rel="stylesheet" href="/static/css/main.css">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">
-            <a href="/">🗳 OMR System</a>
+    {% block body %}
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">G</div>
+                <div>
+                    <div class="brand-text">OMR Grading</div>
+                    <div class="brand-sub">Hệ thống chấm thi</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <!-- Populated by main.js -->
+            </nav>
+            <div class="sidebar-footer" id="sidebar-footer">
+                <!-- Populated by main.js -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-wrapper">
+            <header class="top-header">
+                <h1 class="page-title">{% block page_title %}Tổng quan{% endblock %}</h1>
+                <div class="top-header-actions">
+                    {% block header_actions %}{% endblock %}
+                </div>
+            </header>
+
+            <main class="content">
+                {% block content %}{% endblock %}
+            </main>
+
+            <footer class="footer">
+                OMR Grading System &copy; 2024 — Hệ thống chấm thi trắc nghiệm tự động
+            </footer>
         </div>
-        <ul class="nav-links">
-            <li><a href="/exams">Đề thi</a></li>
-            <li><a href="/scan">Chấm bài</a></li>
-        </ul>
-    </nav>
+    </div>
 
-    <main class="container">
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="footer">
-        <p>OMR System &copy; 2024</p>
-    </footer>
+    <!-- Image Modal -->
+    <div class="modal-overlay" id="image-modal" onclick="closeImageModal()">
+        <button class="modal-close" onclick="closeImageModal()">&times;</button>
+        <img src="" alt="Scanned Answer Sheet">
+    </div>
+    {% endblock %}
 
     <script src="/static/js/main.js"></script>
     {% block extra_js %}{% endblock %}

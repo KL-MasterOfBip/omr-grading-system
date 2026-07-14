@@ -1,14 +1,198 @@
 {% extends "base.html" %}
-{% block title %}Chấm bài OMR{% endblock %}
+{% block title %}Quét & Chấm bài - OMR Grading System{% endblock %}
+{% block page_title %}Quét & Chấm bài{% endblock %}
+
 {% block content %}
-<h1>Chấm bài OMR — {{ exam.title }}</h1>
-<form action="/scan/upload/{{ exam.id }}" method="post" enctype="multipart/form-data">
-    <label>Mã học sinh (SBD)</label>
-    <input type="text" name="student_id">
-    <label>Họ tên học sinh</label>
-    <input type="text" name="student_name">
-    <label>Ảnh bài thi</label>
-    <input type="file" name="file" accept="image/*" required>
-    <button type="submit" class="btn btn-primary">Chấm bài</button>
-</form>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <!-- Left: Upload Form -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Upload phiếu trả lời</h2>
+        </div>
+        <div class="card-body">
+            <div id="upload-alert" class="alert alert-error"></div>
+
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="exam_code_id">Mã đề thi (Exam Code ID)</label>
+                    <input type="number" id="exam_code_id" class="form-control" required placeholder="Nhập ID của mã đề">
+                </div>
+                <div class="form-group">
+                    <label for="student_id">Mã Học Sinh (SBD)</label>
+                    <input type="text" id="student_id" class="form-control" required placeholder="Ví dụ: HS001">
+                </div>
+                <div class="form-group">
+                    <label>Ảnh phiếu trả lời</label>
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">
+                            <span class="material-icons-outlined" style="font-size: 3rem;">cloud_upload</span>
+                        </div>
+                        <div class="upload-text">
+                            <strong>Nhấn để chọn file</strong> hoặc kéo thả ảnh vào đây
+                            <br><small>Hỗ trợ: JPG, PNG (tối đa 10MB)</small>
+                        </div>
+                        <input type="file" id="file-input" accept="image/*" style="display:none">
+                    </div>
+                    <div id="file-name" class="mt-1" style="font-size: 0.85rem; color: var(--text-secondary);"></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="submit-btn">
+                    <span class="material-icons-outlined">document_scanner</span>
+                    Chấm bài ngay
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right: Result Panel -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Kết quả chấm</h2>
+        </div>
+        <div class="card-body">
+            <div id="result-waiting" class="empty-state">
+                <span class="material-icons-outlined">pending</span>
+                <p>Chưa có kết quả. Hãy upload phiếu trả lời để bắt đầu chấm.</p>
+            </div>
+
+            <div id="result-panel" class="hidden">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">ĐIỂM SỐ</div>
+                    <div id="result-score" style="font-size: 3rem; font-weight: 800;"></div>
+                </div>
+
+                <table style="font-size: 0.9rem;">
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--text-secondary)">Mã Học Sinh</td>
+                            <td id="result-student" style="font-weight: 600;"></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--text-secondary)">Mã Đề</td>
+                            <td id="result-exam-code"></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--text-secondary)">Thời gian chấm</td>
+                            <td id="result-time"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="mt-2" id="result-image-wrapper" style="text-align: center;">
+                    <!-- Scanned image shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        const user = window.currentUser;
+        if (user && user.role === 'student') {
+            window.location.href = '/';
+            return;
+        }
+    }, 150);
+
+    // Upload area click & drag-drop
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            fileName.textContent = '📎 ' + e.dataTransfer.files[0].name;
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            fileName.textContent = '📎 ' + fileInput.files[0].name;
+        }
+    });
+
+    // Form submit
+    document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submit-btn');
+        const examCodeId = document.getElementById('exam_code_id').value;
+        const studentId = document.getElementById('student_id').value;
+        const file = fileInput.files[0];
+
+        if (!file) {
+            showAlert('upload-alert', 'Vui lòng chọn file ảnh phiếu trả lời.');
+            return;
+        }
+
+        btn.innerHTML = '<span class="material-icons-outlined">hourglass_empty</span> Đang xử lý...';
+        btn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('student_id', studentId);
+
+        try {
+            const res = await apiFetch(`/scan/upload/${examCodeId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+
+                document.getElementById('result-waiting').classList.add('hidden');
+                document.getElementById('result-panel').classList.remove('hidden');
+
+                const scoreClass = getScoreClass(result.total_score, result.max_score);
+                document.getElementById('result-score').innerHTML =
+                    `<span class="${scoreClass}">${result.total_score} / ${result.max_score}</span>`;
+                document.getElementById('result-student').textContent = result.student_id || '—';
+                document.getElementById('result-exam-code').textContent = result.exam_code_id || '—';
+                document.getElementById('result-time').textContent = new Date(result.scanned_at).toLocaleString('vi-VN');
+
+                // Show scanned image if available
+                if (result.image_path) {
+                    const imgUrl = '/' + result.image_path.replace(/\\/g, '/');
+                    document.getElementById('result-image-wrapper').innerHTML = `
+                        <img src="${imgUrl}" alt="Phiếu đã quét"
+                             style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border); margin-top: 0.5rem; cursor: pointer;"
+                             onclick="openImageModal('${imgUrl}')">
+                    `;
+                }
+
+                const alertEl = document.getElementById('upload-alert');
+                alertEl.textContent = '✅ Chấm bài thành công!';
+                alertEl.className = 'alert alert-success show';
+
+            } else {
+                const err = await res.json();
+                showAlert('upload-alert', err.detail || 'Lỗi khi chấm bài. Kiểm tra lại mã đề.');
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('upload-alert', 'Lỗi kết nối đến server.');
+        } finally {
+            btn.innerHTML = '<span class="material-icons-outlined">document_scanner</span> Chấm bài ngay';
+            btn.disabled = false;
+        }
+    });
+});
+</script>
 {% endblock %}

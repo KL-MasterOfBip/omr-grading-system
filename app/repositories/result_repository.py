@@ -16,6 +16,9 @@ class ResultRepository:
     def get_results_by_exam(self, exam_id: int) -> List[ScanResult]:
         return self.db.query(ScanResult).filter(ScanResult.exam_id == exam_id).all()
 
+    def get_results_by_student(self, student_id: str) -> List[ScanResult]:
+        return self.db.query(ScanResult).filter(ScanResult.student_id == student_id).all()
+
     def create_result(self, **kwargs) -> ScanResult:
         result = ScanResult(**kwargs)
         self.db.add(result)

@@ -11,6 +11,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    role: Optional[str] = "student"
 
 
 class UserUpdate(BaseModel):
@@ -21,6 +22,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: int
+    role: str
     is_active: bool
     is_superuser: bool
     created_at: datetime

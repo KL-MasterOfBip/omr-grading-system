@@ -6,7 +6,7 @@ EXAM_CODE_ID  = 1
 # Đăng nhập lấy token
 resp = requests.post(f"{BASE_URL}/auth/login", data={
     "username": "khanh",  # username bạn vừa dùng
-    "password": "123456789", # đổi lại đúng password của bạn
+    "password": "123456", # đổi lại đúng password của bạn
 })
 token = resp.json()["access_token"]
 headers = {"Authorization": f"Bearer {token}"}

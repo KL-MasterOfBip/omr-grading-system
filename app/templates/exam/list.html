@@ -1,29 +1,182 @@
 {% extends "base.html" %}
-{% block title %}Danh sách đề thi{% endblock %}
+{% block title %}Đề thi - OMR Grading System{% endblock %}
+{% block page_title %}Quản lý Đề thi{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" onclick="openCreateModal()">
+    <span class="material-icons-outlined">add</span>
+    Tạo đề thi mới
+</button>
+{% endblock %}
+
 {% block content %}
-<h1>Danh sách đề thi</h1>
-<a href="/exams/create" class="btn btn-primary">+ Tạo đề thi</a>
-<table class="table">
-    <thead>
-        <tr>
-            <th>ID</th><th>Tiêu đề</th><th>Môn học</th><th>Số câu</th><th>Thao tác</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for exam in exams %}
-        <tr>
-            <td>{{ exam.id }}</td>
-            <td>{{ exam.title }}</td>
-            <td>{{ exam.subject or '-' }}</td>
-            <td>{{ exam.num_questions }}</td>
-            <td>
-                <a href="/exams/{{ exam.id }}">Xem</a> |
-                <a href="/scan/{{ exam.id }}">Chấm bài</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5">Chưa có đề thi nào.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="card">
+    <div class="card-header">
+        <h2>Danh sách Đề thi</h2>
+        <span class="badge badge-green" id="exam-count">0 đề</span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px">ID</th>
+                        <th>Tên đề thi</th>
+                        <th>Môn học</th>
+                        <th>Số câu hỏi</th>
+                        <th>Đáp án</th>
+                        <th>Ngày tạo</th>
+                    </tr>
+                </thead>
+                <tbody id="exams-body">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <span class="material-icons-outlined">hourglass_empty</span>
+                                <p>Đang tải dữ liệu...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tạo Đề Thi -->
+<div class="modal-overlay" id="create-modal">
+    <div class="card" style="width: 100%; max-width: 500px; margin: 2rem;">
+        <div class="card-header">
+            <h2>Tạo Đề Thi Mới</h2>
+            <button class="btn btn-secondary" onclick="closeCreateModal()" style="padding: 0.2rem 0.5rem;"><span class="material-icons-outlined">close</span></button>
+        </div>
+        <div class="card-body">
+            <div id="create-alert" class="alert alert-error"></div>
+            <form id="create-form">
+                <div class="form-group">
+                    <label>Tên đề thi</label>
+                    <input type="text" id="title" class="form-control" required placeholder="VD: Kiểm tra 15 phút">
+                </div>
+                <div class="form-group">
+                    <label>Môn học</label>
+                    <input type="text" id="subject" class="form-control" placeholder="VD: Toán học">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Số câu hỏi</label>
+                        <input type="number" id="num_questions" class="form-control" value="40" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Số lựa chọn</label>
+                        <select id="num_choices" class="form-control">
+                            <option value="4">4 (A, B, C, D)</option>
+                            <option value="5">5 (A, B, C, D, E)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="create-btn">Xác nhận tạo</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openCreateModal() {
+    document.getElementById('create-modal').classList.add('active');
+}
+function closeCreateModal() {
+    document.getElementById('create-modal').classList.remove('active');
+}
+
+document.getElementById('create-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('create-btn');
+    btn.disabled = true;
+    btn.textContent = 'Đang tạo...';
+    
+    const data = {
+        title: document.getElementById('title').value,
+        subject: document.getElementById('subject').value,
+        num_questions: parseInt(document.getElementById('num_questions').value),
+        num_choices: parseInt(document.getElementById('num_choices').value)
+    };
+
+    try {
+        const res = await apiFetch('/exams/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            closeCreateModal();
+            window.location.reload(); // Reload to see new exam
+        } else {
+            const err = await res.json();
+            showAlert('create-alert', err.detail || 'Lỗi khi tạo đề thi.');
+        }
+    } catch(err) {
+        showAlert('create-alert', 'Lỗi kết nối server.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Xác nhận tạo';
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(async () => {
+        const user = window.currentUser;
+        if (!user) return;
+
+        if (user.role === 'student') {
+            window.location.href = '/';
+            return;
+        }
+
+        const tbody = document.getElementById('exams-body');
+
+        try {
+            const res = await apiFetch('/exams/');
+            if (!res.ok) throw new Error('Failed');
+
+            const exams = await res.json();
+            document.getElementById('exam-count').textContent = `${exams.length} đề`;
+
+            if (exams.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="6">
+                        <div class="empty-state">
+                            <span class="material-icons-outlined">description</span>
+                            <p>Chưa có đề thi nào được tạo.</p>
+                        </div>
+                    </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = exams.map(ex => `
+                <tr>
+                    <td><span class="badge badge-green">#${ex.id}</span></td>
+                    <td style="font-weight: 600">${ex.title}</td>
+                    <td>${ex.subject || '—'}</td>
+                    <td>${ex.num_questions} câu</td>
+                    <td>${ex.num_choices} lựa chọn</td>
+                    <td>${new Date(ex.created_at).toLocaleDateString('vi-VN')}</td>
+                </tr>
+            `).join('');
+
+        } catch(e) {
+            console.error(e);
+            tbody.innerHTML = `
+                <tr><td colspan="6">
+                    <div class="empty-state">
+                        <span class="material-icons-outlined">error_outline</span>
+                        <p>Không thể tải danh sách đề thi.</p>
+                    </div>
+                </td></tr>`;
+        }
+    }, 150);
+});
+</script>
 {% endblock %}

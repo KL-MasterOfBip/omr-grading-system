@@ -11,7 +11,7 @@ from app.routers import auth, exam, question, scan, exam_code
 
 app = FastAPI(
     title=settings.APP_NAME,
-    debug=settings.DEBUG,
+    debug=settings.DEBUG,   
 )
 
 
@@ -22,11 +22,15 @@ def on_startup():
 
 # Include routers
 app.include_router(auth.router,     prefix="/auth",      tags=["auth"])
-app.include_router(exam.router,     prefix="/exams",     tags=["exams"])        # ← thêm
-app.include_router(question.router, prefix="/questions", tags=["questions"])    # ← thêm
-app.include_router(scan.router,     prefix="/scan",      tags=["scan"])         # ← thêm
+app.include_router(exam.router,     prefix="/exams",     tags=["exams"])
+app.include_router(question.router, prefix="/questions", tags=["questions"])
+app.include_router(scan.router,     prefix="/scan",      tags=["scan"])
 app.include_router(exam_code.router, prefix="/exam-codes", tags=["exam-codes"])
 
-@app.get("/")
-def root():
-    return {"message": f"Welcome to {settings.APP_NAME}"}
+# Frontend Pages Router
+from app.routers import pages
+app.include_router(pages.router)
+
+# Mount static files & uploads
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")

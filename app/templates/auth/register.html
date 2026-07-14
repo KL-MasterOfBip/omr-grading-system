@@ -1,19 +1,96 @@
-{% extends "base.html" %}
-{% block title %}Đăng ký{% endblock %}
-{% block content %}
-<div class="auth-box">
-    <h1>Đăng ký tài khoản</h1>
-    <form action="/auth/register" method="post">
-        <label>Tên đăng nhập</label>
-        <input type="text" name="username" required>
-        <label>Email</label>
-        <input type="email" name="email" required>
-        <label>Họ tên</label>
-        <input type="text" name="full_name">
-        <label>Mật khẩu</label>
-        <input type="password" name="password" required>
-        <button type="submit" class="btn btn-primary">Đăng ký</button>
-    </form>
-    <p>Đã có tài khoản? <a href="/auth/login">Đăng nhập</a></p>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - OMR Grading System</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="logo-icon">G</div>
+                <h1>Tạo tài khoản</h1>
+                <p>Đăng ký tài khoản để sử dụng hệ thống</p>
+            </div>
+
+            <div id="register-alert" class="alert alert-error"></div>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập / Mã học sinh</label>
+                    <input type="text" id="username" class="form-control" required placeholder="Ví dụ: gvnguyen hoặc HS001">
+                </div>
+                <div class="form-group">
+                    <label for="fullname">Họ và tên</label>
+                    <input type="text" id="fullname" class="form-control" required placeholder="Nguyễn Văn A">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" class="form-control" required placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" class="form-control" required placeholder="Tối thiểu 6 ký tự" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="role">Vai trò</label>
+                    <select id="role" class="form-control" required>
+                        <option value="student">Học sinh</option>
+                        <option value="teacher">Giáo viên</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="register-btn">
+                    Đăng ký
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Đã có tài khoản? <a href="/login">Đăng nhập</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('register-btn');
+            btn.textContent = 'Đang xử lý...';
+            btn.disabled = true;
+
+            const data = {
+                username: document.getElementById('username').value,
+                full_name: document.getElementById('fullname').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value
+            };
+
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    const alertEl = document.getElementById('register-alert');
+                    alertEl.textContent = 'Đăng ký thành công! Đang chuyển hướng...';
+                    alertEl.className = 'alert alert-success show';
+                    setTimeout(() => { window.location.href = '/login'; }, 1500);
+                } else {
+                    const err = await res.json();
+                    showAlert('register-alert', err.detail || 'Đăng ký thất bại. Vui lòng thử lại.');
+                }
+            } catch (err) {
+                showAlert('register-alert', 'Không thể kết nối đến server.');
+            } finally {
+                btn.textContent = 'Đăng ký';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

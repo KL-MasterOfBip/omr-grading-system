@@ -39,6 +39,15 @@ def get_results(exam_id: int, db: Session = Depends(get_db)):
     return repo.get_results_by_exam(exam_id)
 
 
+@router.get("/my-results", response_model=List[ScanResultResponse])
+def get_my_results(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user)
+):
+    repo = ResultRepository(db)
+    return repo.get_results_by_student(student_id=current_user.username)
+
+
 @router.get("/result/{result_id}", response_model=ScanResultResponse)
 def get_result(result_id: int, db: Session = Depends(get_db)):
     repo = ResultRepository(db)

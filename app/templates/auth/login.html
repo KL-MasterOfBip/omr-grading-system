@@ -1,15 +1,76 @@
-{% extends "base.html" %}
-{% block title %}Đăng nhập{% endblock %}
-{% block content %}
-<div class="auth-box">
-    <h1>Đăng nhập</h1>
-    <form action="/auth/login" method="post">
-        <label>Tên đăng nhập</label>
-        <input type="text" name="username" required>
-        <label>Mật khẩu</label>
-        <input type="password" name="password" required>
-        <button type="submit" class="btn btn-primary">Đăng nhập</button>
-    </form>
-    <p>Chưa có tài khoản? <a href="/auth/register">Đăng ký</a></p>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - OMR Grading System</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <div class="logo-icon">G</div>
+                <h1>OMR Grading</h1>
+                <p>Đăng nhập vào hệ thống chấm thi</p>
+            </div>
+
+            <div id="login-alert" class="alert alert-error"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" class="form-control" required placeholder="Nhập username hoặc mã học sinh" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" class="form-control" required placeholder="Nhập mật khẩu" autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
+                    Đăng nhập
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Chưa có tài khoản? <a href="/register">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            btn.textContent = 'Đang xử lý...';
+            btn.disabled = true;
+
+            const formData = new URLSearchParams();
+            formData.append('username', document.getElementById('username').value);
+            formData.append('password', document.getElementById('password').value);
+
+            try {
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setToken(data.access_token);
+                    window.location.href = '/';
+                } else {
+                    const err = await res.json();
+                    showAlert('login-alert', err.detail || 'Tên đăng nhập hoặc mật khẩu không đúng.');
+                }
+            } catch (err) {
+                showAlert('login-alert', 'Không thể kết nối đến server.');
+            } finally {
+                btn.textContent = 'Đăng nhập';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

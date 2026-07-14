@@ -28,6 +28,7 @@ class UserRepository:
         email: str,
         password: str,
         full_name: Optional[str] = None,
+        role: Optional[str] = "student",
     ) -> User:
         """Tạo user mới — hash password trước lưu"""
         hashed_password = hash_password(password)
@@ -36,6 +37,7 @@ class UserRepository:
             email=email,
             hashed_password=hashed_password,
             full_name=full_name,
+            role=role,
             is_active=True,
             is_superuser=False,
         )

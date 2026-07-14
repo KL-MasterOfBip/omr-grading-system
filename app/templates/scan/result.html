@@ -1,25 +1,164 @@
 {% extends "base.html" %}
-{% block title %}Kết quả chấm bài{% endblock %}
-{% block content %}
-<h1>Kết quả chấm bài</h1>
-<p><strong>Học sinh:</strong> {{ result.student_name or 'N/A' }}</p>
-<p><strong>SBD:</strong> {{ result.student_id or 'N/A' }}</p>
-<p><strong>Điểm:</strong> {{ result.total_score }} / {{ result.max_score }}</p>
+{% block title %}Bảng điểm - OMR Grading System{% endblock %}
+{% block page_title %}Bảng điểm{% endblock %}
 
-<h2>Chi tiết từng câu</h2>
-<table class="table">
-    <thead>
-        <tr><th>Câu</th><th>Đã chọn</th><th>Đáp án đúng</th><th>Kết quả</th></tr>
-    </thead>
-    <tbody>
-        {% for detail in answer_details %}
-        <tr class="{{ 'correct' if detail.is_correct else 'wrong' }}">
-            <td>{{ loop.index }}</td>
-            <td>{{ detail.selected_answer or '-' }}</td>
-            <td>{{ detail.question.correct_answer }}</td>
-            <td>{{ '✓' if detail.is_correct else '✗' }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block header_actions %}
+<div id="teacher-filter" class="hidden" style="display: flex; align-items: center; gap: 0.75rem;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin: 0; white-space: nowrap;">Đề thi:</label>
+    <select id="exam-select" class="form-control" style="width: 240px;">
+        <option value="">— Chọn đề thi —</option>
+    </select>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 id="results-title">Kết quả thi</h2>
+        <span class="badge badge-blue" id="result-count"></span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px">STT</th>
+                        <th>Mã HS</th>
+                        <th>Tên HS</th>
+                        <th>Điểm</th>
+                        <th>Thời gian chấm</th>
+                        <th style="width: 70px">Ảnh</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state" id="results-empty">
+                                <span class="material-icons-outlined">leaderboard</span>
+                                <p id="empty-text">Vui lòng chọn đề thi để xem bảng điểm.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function renderResults(results) {
+    const tbody = document.getElementById('results-body');
+    const countBadge = document.getElementById('result-count');
+    countBadge.textContent = `${results.length} bài`;
+
+    if (results.length === 0) {
+        tbody.innerHTML = `
+            <tr><td colspan="6">
+                <div class="empty-state">
+                    <span class="material-icons-outlined">inbox</span>
+                    <p>Chưa có kết quả nào.</p>
+                </div>
+            </td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = results.map((r, i) => {
+        const scoreClass = getScoreClass(r.total_score, r.max_score);
+        const imgPath = r.image_path ? '/' + r.image_path.replace(/\\/g, '/') : '';
+        const imgCell = imgPath
+            ? `<img src="${imgPath}" class="scan-thumb" alt="Scan" onclick="openImageModal('${imgPath}')">`
+            : '—';
+
+        return `
+            <tr>
+                <td>${i + 1}</td>
+                <td><span style="font-weight: 600">${r.student_id || '—'}</span></td>
+                <td>${r.student_name || '—'}</td>
+                <td>
+                    <span class="score-display ${scoreClass}">
+                        ${r.total_score} / ${r.max_score}
+                    </span>
+                </td>
+                <td>${new Date(r.scanned_at).toLocaleString('vi-VN')}</td>
+                <td>${imgCell}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(async () => {
+        const user = window.currentUser;
+        if (!user) return;
+
+        const isTeacher = user.role === 'teacher' || user.role === 'admin';
+
+        if (!isTeacher) {
+            // Student: show their own results
+            document.getElementById('results-title').textContent = 'Điểm của tôi';
+            document.getElementById('empty-text').textContent = 'Đang tải kết quả...';
+
+            try {
+                const res = await apiFetch('/scan/my-results');
+                if (res.ok) {
+                    const results = await res.json();
+                    renderResults(results);
+                }
+            } catch(e) { console.error(e); }
+
+        } else {
+            // Teacher: show filter + results
+            const filterEl = document.getElementById('teacher-filter');
+            filterEl.classList.remove('hidden');
+            filterEl.style.display = 'flex';
+
+            try {
+                const exRes = await apiFetch('/exams/');
+                if (exRes.ok) {
+                    const exams = await exRes.json();
+                    const select = document.getElementById('exam-select');
+
+                    exams.forEach(ex => {
+                        const opt = document.createElement('option');
+                        opt.value = ex.id;
+                        opt.textContent = `#${ex.id} — ${ex.title}`;
+                        select.appendChild(opt);
+                    });
+
+                    select.addEventListener('change', async () => {
+                        const examId = select.value;
+                        if (!examId) {
+                            document.getElementById('results-body').innerHTML = `
+                                <tr><td colspan="6">
+                                    <div class="empty-state">
+                                        <span class="material-icons-outlined">leaderboard</span>
+                                        <p>Vui lòng chọn đề thi để xem bảng điểm.</p>
+                                    </div>
+                                </td></tr>`;
+                            document.getElementById('result-count').textContent = '';
+                            return;
+                        }
+
+                        document.getElementById('results-body').innerHTML = `
+                            <tr><td colspan="6">
+                                <div class="empty-state">
+                                    <span class="material-icons-outlined">hourglass_empty</span>
+                                    <p>Đang tải...</p>
+                                </div>
+                            </td></tr>`;
+
+                        const sRes = await apiFetch(`/scan/results/${examId}`);
+                        if (sRes.ok) {
+                            const results = await sRes.json();
+                            renderResults(results);
+                        }
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+    }, 150);
+});
+</script>
 {% endblock %}

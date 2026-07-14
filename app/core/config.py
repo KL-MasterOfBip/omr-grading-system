@@ -1,5 +1,8 @@
+import os
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Settings(BaseSettings):
@@ -8,7 +11,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # ── Database ───────────────────────────────────────────
-    DATABASE_URL: str = "sqlite:///./omr.db"
+    DATABASE_URL: str = f"sqlite:///{os.path.join(BASE_DIR, 'omr.db')}"
 
     # ── JWT ────────────────────────────────────────────────
     SECRET_KEY: str = "change-this-secret-key-in-production"
